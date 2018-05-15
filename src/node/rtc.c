@@ -45,6 +45,15 @@ void rtc_init(){
     // OSCCONbits.COSC = 0b101; // OSCILLATOR SETTINGS
     setRTCWREN();
     
+    // ALARM:
+    ALRMVAL = 0x00; // Just to make sure.
+    ALCFGRPTbits.AMASK  = 0b0010; // Alarm every 10 seconds
+    ALCFGRPTbits.CHIME  = 1;      // Chime enable, alarm goes forever
+    ALCFGRPTbits.ARPT   = 1;   // Repeat 255 times
+    ALCFGRPTbits.ALRMEN = 1;      // Enable the alarm
+    
+    
+    
     RTCPWCbits.RTCLK = 0b01; // Use LRP clk, '00' for SOSC.
     RCFGCALbits.RTCEN = 1;   // RTCC Enable.
     

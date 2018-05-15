@@ -3,6 +3,8 @@
 //  | | | |   __| | | | Nikolai Nymo
 //  |_|___|_____|_|___| 06-02-18
 #include <xc.h>
+#define FCY 4000000L // Define before including libpic
+#include <libpic30.h>
 #include "types.h"
 #include "utilities.h"
 #include "uart.h"
@@ -11,7 +13,6 @@
 #include "temp.h"
 #include "ui.h"
 #include "nvm.h"
-#include "xbee.h"
 
 //-----------------------------------------------//
 //                    GLOBALS                    //                     
@@ -45,6 +46,14 @@ void _ISRFAST _CNInterrupt(){
 void _ISRFAST _T3Interrupt(){
     state.flags.timeOut = 1; // Set the time-out flag
     IFS0bits.T3IF       = 0; // Clear the flag
+}
+//-----------------------------------------------//
+//               RTC ALARM ISR                   //                     
+//-----------------------------------------------//
+
+void _ISRFAST _RTCCInterrupt(){
+    state.flags.timeOut = 1; // Set the time-out flag
+    IFS3bits.RTCIF      = 0; // Clear the flag
 }
 //-----------------------------------------------//
 //                 U1 RX ISR                     //                     
@@ -85,18 +94,18 @@ void _ISRFAST _U1RXInterrupt(){
 static void refreshState(){            
     state.time = rtc_getTime();
     util_runLampFSM(&state);
-    //temp_startConversion();
-    //__delay_ms(10);
-    //state.boardTemp = temp_getTemp(probe);
-    //state.plantTemp = temp_getTemp(wireProbe);
-    //state.waterLevel = util_getWaterLevel();
+    temp_startConversion();
+    __delay_ms(10);
+    state.boardTemp = temp_getTemp(probe);
+    state.plantTemp = temp_getTemp(wireProbe);
+    state.waterLevel = util_getWaterLevel();
 }
 
 static void initAll(){
     util_initPins();
     util_initADC();
-    util_initTimer23();
-    uart_init9600(1); // Channel 1
+    //util_initTimer23();
+    //uart_init9600(1); // Channel 1
     util_initInterrupts();
     oled_init();
     rtc_init(); 
@@ -137,6 +146,7 @@ int main(void){
                 
                 refreshState();
                 ui_printBootMenu();
+                __delay_ms(2000);
                 ui_printHeader();
                 ui_printMenu();
                 ui_refreshHeader(&state);
