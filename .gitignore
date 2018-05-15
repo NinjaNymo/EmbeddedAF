@@ -1,0 +1,38 @@
+   _____ _____ _____
+#  |   | |__   |   | | SMARTEMBED/.gitignore
+#  | | | |   __| | | | Nikolai Nymo
+#  |_|___|_____|_|___| 
+
+#
+#       MACOS FILES
+#
+*.DS_Store
+*.DS_Store
+
+#
+#       COMPILED SOURCE
+#
+*.o
+*.o.d
+
+#
+#       EAGLE
+#
+*.s#?
+*.b#?
+*.l#?
+*.b$?
+*.s$?
+*.l$?
+*.job
+
+#
+#       MPLAB PROJECT
+#
+# See http://microchipdeveloper.com/mplabx:version-control-working-with
+**/GrowNode.X/build
+**/GrowNode.X/dist
+**/GrowNode.X/debug
+**/GrowNode.X/nbproject/private
+**/GrowNode.X/nbproject/Makefile-*
+**/GrowNode.X/nbproject/Package-*
