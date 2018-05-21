@@ -7,7 +7,7 @@
 
 #include "types.h"
 
-void rtc_init();
+void rtc_init(uint8_t refreshtime);
 dateTime_t rtc_getDateTime();
 time_t rtc_getTime();
 void rtc_setTime(uint8_t hh, uint8_t mm);

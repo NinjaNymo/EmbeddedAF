@@ -24,7 +24,7 @@ static void setRTCWREN(){
 
 static void resetTime(){
     __builtin_write_RTCWEN();
-    RCFGCALbits.RTCPTR = 3; // Automatically decrements to 0
+    RCFGCALbits.RTCPTR = 3; // Automatically decrements when reading RTCVAL
     RTCVAL = 0x0000;
     RTCVAL = 0x0000;
     RTCVAL = 0x0000;
@@ -41,16 +41,16 @@ uint16_t bcdToDec(uint16_t value){
 }
 
 
-void rtc_init(){
+void rtc_init(uint8_t rt){
     // OSCCONbits.COSC = 0b101; // OSCILLATOR SETTINGS
     setRTCWREN();
     
     // ALARM:
     ALRMVAL = 0x00; // Just to make sure.
-    ALCFGRPTbits.AMASK  = 0b0010; // Alarm every 10 seconds
-    ALCFGRPTbits.CHIME  = 1;      // Chime enable, alarm goes forever
-    ALCFGRPTbits.ARPT   = 1;   // Repeat 255 times
-    ALCFGRPTbits.ALRMEN = 1;      // Enable the alarm
+    ALCFGRPTbits.AMASK  = rt; // Alarm period, 0b0 = 1s, 0b10 = 10s 0b100 = 1h
+    ALCFGRPTbits.CHIME  = 1;  // Chime enable, alarm goes forever
+    ALCFGRPTbits.ARPT   = 1;  // Repeat 255 times
+    ALCFGRPTbits.ALRMEN = 1;  // Enable the alarm
     
     
     
