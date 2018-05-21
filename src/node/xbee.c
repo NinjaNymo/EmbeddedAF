@@ -4,6 +4,8 @@
 //  |_|___|_____|_|___| 22-04-18
 
 #include <xc.h>
+#define FCY 4000000L // Define before including libpic
+#include <libpic30.h>
 #include "uart.h"
 #include "xbee.h"
 
@@ -38,13 +40,14 @@ void xbee_transmitRequest(uint8_t* f, uint8_t fLen){
     uart_sendByte(0x00);      // 17 - Options = 0, default
     // RF data:
     //
-    for(uint8_t i = 0; i < fLen; i ++){
-        cs_temp += f[i];
-        uart_sendByte(f[i]);
+    for(uint8_t j = 0; j < fLen; j ++){
+        cs_temp += f[j];
+        uart_sendByte(f[j]);
     }
     // Checksum:
     //
     uint8_t cs = 0xFF - (cs_temp & 0xFF);
     uart_sendByte(cs);
+    __delay_ms(50); // Don't know why but this appears to be necessary
     __builtin_disi(0x0000); /* enable interrupts */
 }
