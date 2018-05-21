@@ -13,6 +13,8 @@ uint8_t  util_getWaterLevel();
 void     util_runLampFSM(systemState_t* state);
 void     util_initInterrupts();
 void     util_initTimer23();
+void     util_startTimer23();
+void     util_stopTimer23();
 
 #endif	/* UTILITIES_H */
 

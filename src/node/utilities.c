@@ -123,15 +123,15 @@ void util_runLampFSM(systemState_t* state){
 
 void util_initInterrupts(){
     INTCON1bits.NSTDIS = 1; // Disable nested interrupts
-    /*
+    
     // UART 1 RX:
     IFS0bits.U1RXIF = 0; // Clear UART 1 RX interrupt flag
     IEC0bits.U1RXIE = 1; // Enable UART 1 RX interrupt
     
     // Timer 2/3:
-    IFS0bits.T3IF   = 0; // Clear Timer 3 interrupt flag
-    IEC0bits.T3IE   = 1; // Enable Timer 3 interrupt
-    */
+    //IFS0bits.T3IF   = 0; // Clear Timer 3 interrupt flag
+    //IEC0bits.T3IE   = 1; // Enable Timer 3 interrupt
+    
     // RTC alarm:
     IFS3bits.RTCIF  = 0; // Clear RTC interrupt flag
     IEC3bits.RTCIE  = 1; // Enable RTC 
@@ -151,7 +151,14 @@ void util_initTimer23(){
 
     PR3 = 0x0002; // Most significant word of compare value
     PR2 = 0x625A; // Least significant word of compare value
-    T2CONbits.TON   = 1; // Start Timer 2/3
+}
+
+void util_startTimer23(){
+    T2CONbits.TON = 1;
+}
+
+void util_stopTimer23(){
+    T2CONbits.TON = 0;
 }
 
 
