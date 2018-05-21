@@ -16,6 +16,8 @@ void uart_init9600(uint8_t channel){
         U1MODEbits.PDSEL    = 0;  // 8-bit data, no parity
         U1BRG               = 25; // FCY / (16*baudrate) - 1
         U1MODEbits.UARTEN   = 1;  // Enable UART 1
+        U1MODEbits.WAKE     = 1;  // Wake CPU from sleep when RX
+        U1MODEbits.USIDL    = 0;  // Continue operation in IDLE mode
         U1STAbits.UTXEN     = 1;  // Enable UART transmitter
         U1STAbits.URXEN     = 1;  // Enable UART receiver
     }
