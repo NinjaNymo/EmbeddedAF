@@ -56,6 +56,9 @@ static void ui_printMqttState(mqttState_t ms){
         case CONNECTED:
             state = "CONNECTED";
             break;
+        case ENABLED:
+            state = "ENABLED  ";
+            break;
         case DISCONNECTED:
             state = "DISCONN. ";
             break;
@@ -456,6 +459,90 @@ void ui_printMenu(){
     oled_printChar('>');
 }
 
+static void ui_setNodeID(systemState_t* state){
+    state->flags.bChange = 0;
+    uint8_t nID = state->settings.fields.nodeID;
+    oled_clear();
+    oled_goToPos(0, 40);
+    char* title = "SET NODE ID";
+    for(uint8_t i = 0; i < 11; i++){
+        oled_printChar(title[i]);
+    }
+    char* description = "ID to identify with MQTT Broker.";
+    oled_goToPos(6,0);
+    for(uint8_t i = 0; i < 32; i++){
+        oled_printChar(description[i]);
+    }
+    
+    uint8_t indexLoc[3] = {8, 60, 116};
+    uint8_t hIndex = 0;
+    char buffer[32];
+    while(hIndex < 100){
+        if(state->flags.bChange){
+            state->flags.bChange = 0;
+            switch(state->bDir){
+                case LEFT:
+                    if(hIndex == 0){
+                        hIndex = 100;
+                    }
+                    else{
+                        oled_goToPos(3, indexLoc[hIndex]);
+                        oled_printChar(' ');
+                        hIndex--;
+                        oled_goToPos(3, indexLoc[hIndex]);
+                        oled_printChar('^');
+                    }
+                    break;
+                case RIGHT:
+                    if (hIndex < 2){
+                        oled_goToPos(3, indexLoc[hIndex]);
+                        oled_printChar(' ');
+                        hIndex++;
+                        oled_goToPos(3, indexLoc[hIndex]);
+                        oled_printChar('^');
+                    }
+                    else{
+                        state->settings.fields.nodeID = nID;
+                        nvm_saveSettings(state->settings.raw);
+                        hIndex = 100;
+                    }
+                    break;
+                case UP:
+                    if(hIndex == 1){
+                        if(nID < 255){
+                            nID++;
+                        }
+                        else{
+                            nID = 0;
+                        }
+                    }
+                    break;
+                case DOWN:
+                    if(hIndex == 1){
+                        if(nID > 0){
+                            nID--;
+                        }
+                        else{
+                            nID = 255;
+                        }
+                    }
+                    break;
+                default:
+                    break; 
+            }
+        }
+        
+        oled_goToPos(2,0);
+        sprintf(buffer, "CANCEL        %03d           SET", nID);
+        for(uint8_t i = 0; i < 31; i++){
+            oled_printChar(buffer[i]);
+        }
+        Sleep();
+    }
+    oled_clear(); 
+    
+}
+
 uint8_t ui_browse(systemState_t* state){
     uint8_t update = 0;
     switch(state->bDir){
@@ -501,10 +588,22 @@ uint8_t ui_browse(systemState_t* state){
                     update = 1;
                     break;
                 case 3:
+                    ui_setNodeID(state);
+                    update = 1;
                     break;
                 case 4:
-                    break;
-                case 5:
+                    switch(state->mqttState){
+                        case CONNECTED:
+                        case ENABLED:
+                        case DISCONNECTED:
+                            state->mqttState = DISABLED;
+                            update = 1;
+                            break;
+                        case DISABLED:
+                            state->mqttState = ENABLED;
+                            update = 1;
+                            break;
+                    }
                     break;
                 default:
                     break;
