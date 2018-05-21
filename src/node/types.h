@@ -28,9 +28,9 @@ typedef struct{
 }time_t; 
 
 typedef struct{
-    uint8_t timeOut;
-    uint8_t rxPacket;
-    uint8_t bChange;
+    volatile uint8_t timeOut;
+    volatile uint8_t rxPacket;
+    volatile uint8_t bChange;
 }flags_t;
 
 typedef union{
