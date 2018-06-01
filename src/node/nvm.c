@@ -44,6 +44,11 @@ void nvm_saveCycle(uint8_t sunrise, uint8_t sunset){
 uint16_t nvm_getSettings(){
     uint16_t settings;
     settings  = DataEERead(SETTINGSADDR);
+    uint8_t mqttSetting = settings & 0xFF;
+    // Avoid errors when memory is not initialized
+    if(mqttSetting > 1){
+        settings = settings & 0xFF00;
+    }
     return settings;
 }
 

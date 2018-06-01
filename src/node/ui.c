@@ -8,8 +8,6 @@
 #include "utilities.h"
 #include "ui.h"
 #include "oled.h"
-#include "rtc.h"
-#include "nvm.h"
 
 uint8_t menuIndex = 0;
 
@@ -159,7 +157,8 @@ static void ui_updateMenuIndex(dir_t bDir){
     }
 }
 
-static void ui_setTime(systemState_t* state){
+static uint8_t ui_setTime(systemState_t* state){
+    uint8_t update = NOUPDATES;
     state->flags.bChange = 0;
     oled_clear();
     oled_goToPos(0, 35);
@@ -203,8 +202,10 @@ static void ui_setTime(systemState_t* state){
                         oled_printChar('^');
                     }
                     else{
-                        rtc_setTime(hh, mm);
+                        state->time.hour = hh;
+                        state->time.min  = mm;
                         hIndex = 100;
+                        update = UPDATETIME;
                     }
                     break;
                 case UP:
@@ -255,10 +256,12 @@ static void ui_setTime(systemState_t* state){
         }
         Sleep();
     }
-    oled_clear(); 
+    oled_clear();
+    return update;
 }
 
-static void ui_setCycle(systemState_t* state){
+static uint8_t ui_setCycle(systemState_t* state){
+    uint8_t update = NOUPDATES;
     state->flags.bChange = 0;
     oled_clear();
     oled_goToPos(0, 35);
@@ -304,8 +307,8 @@ static void ui_setCycle(systemState_t* state){
                     else{
                         state->sunrise = sr;
                         state->sunset = ss;
-                        nvm_saveCycle(sr, ss);
                         hIndex = 100;
+                        update = UPDATECYCLE;
                     }
                     break;
                 case UP:
@@ -356,7 +359,8 @@ static void ui_setCycle(systemState_t* state){
         }
         Sleep();
     }
-    oled_clear(); 
+    oled_clear();
+    return update;
 }
 
 void ui_printHeader(){
@@ -459,7 +463,8 @@ void ui_printMenu(){
     oled_printChar('>');
 }
 
-static void ui_setNodeID(systemState_t* state){
+static uint8_t ui_setNodeID(systemState_t* state){
+    uint8_t update = NOUPDATES;
     state->flags.bChange = 0;
     uint8_t nID = state->settings.fields.nodeID;
     oled_clear();
@@ -477,6 +482,8 @@ static void ui_setNodeID(systemState_t* state){
     uint8_t indexLoc[3] = {8, 60, 116};
     uint8_t hIndex = 0;
     char buffer[32];
+    oled_goToPos(3, indexLoc[hIndex]);
+    oled_printChar('^');
     while(hIndex < 100){
         if(state->flags.bChange){
             state->flags.bChange = 0;
@@ -503,7 +510,7 @@ static void ui_setNodeID(systemState_t* state){
                     }
                     else{
                         state->settings.fields.nodeID = nID;
-                        nvm_saveSettings(state->settings.raw);
+                        update = UPDATENODEID;
                         hIndex = 100;
                     }
                     break;
@@ -540,23 +547,24 @@ static void ui_setNodeID(systemState_t* state){
         Sleep();
     }
     oled_clear(); 
+    return update;
     
 }
 
 uint8_t ui_browse(systemState_t* state){
-    uint8_t update = 0;
+    uint8_t update = NOUPDATES;
     switch(state->bDir){
         case UP:
             if(menuIndex > 0){
                 ui_updateMenuIndex(state->bDir);
             }
-            update = 0;
+            update = UPDATEINDEX;
             break;
         case DOWN:
             if(menuIndex < 4){
                 ui_updateMenuIndex(state->bDir);
             }
-            update = 0;
+            update = UPDATEINDEX;
             break;
         case RIGHT:
             switch(menuIndex){
@@ -577,19 +585,16 @@ uint8_t ui_browse(systemState_t* state){
                         default:
                             break;
                     }
-                    update = 1;
+                    update = UPDATECYCLE;
                     break;
                 case 1:
-                    ui_setTime(state);
-                    update = 1;
+                    update = ui_setTime(state);
                     break;
                 case 2:
-                    ui_setCycle(state);
-                    update = 1;
+                    update = ui_setCycle(state);
                     break;
                 case 3:
-                    ui_setNodeID(state);
-                    update = 1;
+                    update = ui_setNodeID(state);
                     break;
                 case 4:
                     switch(state->mqttState){
@@ -597,13 +602,12 @@ uint8_t ui_browse(systemState_t* state){
                         case ENABLED:
                         case DISCONNECTED:
                             state->mqttState = DISABLED;
-                            update = 1;
                             break;
                         case DISABLED:
                             state->mqttState = ENABLED;
-                            update = 1;
                             break;
                     }
+                    update = UPDATEMQTT;
                     break;
                 default:
                     break;

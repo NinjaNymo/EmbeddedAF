@@ -6,6 +6,13 @@
 #ifndef UI_H
 #define	UI_H
 
+#define NOUPDATES    0
+#define UPDATETIME   1
+#define UPDATENODEID 2
+#define UPDATECYCLE  3
+#define UPDATEMQTT   4
+#define UPDATEINDEX  5
+
 void ui_printHeader();
 void ui_refreshHeader(systemState_t* state);
 void ui_printBootMenu();

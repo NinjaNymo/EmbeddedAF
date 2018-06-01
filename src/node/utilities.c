@@ -129,8 +129,8 @@ void util_initInterrupts(){
     IEC0bits.U1RXIE = 1; // Enable UART 1 RX interrupt
     
     // Timer 2/3:
-    //IFS0bits.T3IF   = 0; // Clear Timer 3 interrupt flag
-    //IEC0bits.T3IE   = 1; // Enable Timer 3 interrupt
+    IFS0bits.T3IF   = 0; // Clear Timer 3 interrupt flag
+    IEC0bits.T3IE   = 1; // Enable Timer 3 interrupt
     
     // RTC alarm:
     IFS3bits.RTCIF  = 0; // Clear RTC interrupt flag
@@ -149,8 +149,8 @@ void util_initTimer23(){
     // For 30 seconds, trigger interrupt at 468750 = 0x0007270E
     // For 60 seconds, trigger interrupt at 937500 = 0x000E4E1C
 
-    PR3 = 0x0002; // Most significant word of compare value
-    PR2 = 0x625A; // Least significant word of compare value
+    PR3 = 0x0007; // Most significant word of compare value
+    PR2 = 0x270E; // Least significant word of compare value
 }
 
 void util_startTimer23(){
@@ -159,6 +159,9 @@ void util_startTimer23(){
 
 void util_stopTimer23(){
     T2CONbits.TON = 0;
+    // Reset timer
+    TMR2 = 0;
+    TMR3 = 0;
 }
 
 

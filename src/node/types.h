@@ -7,9 +7,9 @@
 #define	TYPES_H
 
 typedef enum {ENABLED, DISCONNECTED, CONNECTED, DISABLED} mqttState_t;
-typedef enum {ON, OFF, SUS_ON, SUS_OFF} lampState_t;
+typedef enum {ON = 0, OFF = 1, SUS_ON = 2, SUS_OFF = 3} lampState_t;
 typedef enum {UP, DOWN, LEFT, RIGHT, NONE} dir_t;
-typedef enum {INIT, CONNECTING, IDLE, REFRESH, PUB_VALS, PUB_STATE, HANDLE_MSG, BROWSE} loopState_t;
+typedef enum {INIT, CONNECTING, SUBSCRIBE, IDLE, REFRESH, PUB_VALS, PUB_STATE, HANDLE_MSG, BROWSE} loopState_t;
 
 typedef struct{ 
     uint8_t sec; 
@@ -28,6 +28,7 @@ typedef struct{
 }time_t; 
 
 typedef struct{
+    volatile uint8_t refresh;
     volatile uint8_t timeOut;
     volatile uint8_t rxPacket;
     volatile uint8_t bChange;

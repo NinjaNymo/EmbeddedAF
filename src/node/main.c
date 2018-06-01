@@ -13,15 +13,24 @@
 #include "temp.h"
 #include "ui.h"
 #include "nvm.h"
+#include "mqtt.h"
 
+#include "stdio.h"
+//-----------------------------------------------//
+//                    DEFINES                    //                     
+//-----------------------------------------------//
+#define REFRESHITIME 0b0010 // 0b0 = 1s, 0b10 = 10s, 0b100 = 1h
+                            // Count with ISR for more...
+
+#define ISR __attribute__((interrupt, auto_psv))
 //-----------------------------------------------//
 //                    GLOBALS                    //                     
 //-----------------------------------------------//
-systemState_t state = {INIT, 0, 0, {0}, {0, 0, 0}, 0, 0, 0, OFF, DISABLED, {0, 0, 0}, NONE};
+systemState_t state = {INIT, 0, 0, {0}, {0, 0, 0}, 0, 0, 0, OFF, DISABLED, {0, 0, 0, 0}, NONE};
 //-----------------------------------------------//
 //               INPUT CHANGE ISR                //                     
 //-----------------------------------------------//
-void _ISRFAST _CNInterrupt(){
+void ISR _CNInterrupt(){
     if(PORTAbits.RA2 == 0){
         state.bDir = UP;
         state.flags.bChange = 1;
@@ -43,7 +52,7 @@ void _ISRFAST _CNInterrupt(){
 //-----------------------------------------------//
 //               TIMER 2/3 ISR                   //                     
 //-----------------------------------------------//
-void _ISRFAST _T3Interrupt(){
+void ISR _T3Interrupt(){
     state.flags.timeOut = 1; // Set the time-out flag
     IFS0bits.T3IF       = 0; // Clear the flag
 }
@@ -51,19 +60,21 @@ void _ISRFAST _T3Interrupt(){
 //               RTC ALARM ISR                   //                     
 //-----------------------------------------------//
 
-void _ISRFAST _RTCCInterrupt(){
-    state.flags.timeOut = 1; // Set the time-out flag
+void ISR _RTCCInterrupt(){
+    state.flags.refresh = 1; // Set the time-out flag
     IFS3bits.RTCIF      = 0; // Clear the flag
 }
 //-----------------------------------------------//
 //                 U1 RX ISR                     //                     
 //-----------------------------------------------//
-uint8_t packet[35];
-uint8_t newPacket = 0;
-uint8_t pIndex = 0;
-uint16_t pLength;
-void _ISRFAST _U1RXInterrupt(){
+volatile uint8_t packet[30];
+volatile uint8_t newPacket = 0;
+volatile uint16_t pIndex = 0;
+volatile uint16_t pLength = 0;
+void ISR _U1RXInterrupt(){
+    IFS0bits.U1RXIF = 0;
     uint8_t rx = U1RXREG;
+    
     // Look for start of new message:
     if((rx == 0x7E) && (pIndex == 0)){
         packet[0] = 0x7E;
@@ -80,13 +91,15 @@ void _ISRFAST _U1RXInterrupt(){
             pIndex ++;
         }
         // Look for end of message:
-        else if(pIndex == pLength - 3){
-            pIndex = 0;
-            pLength = 0;
-            state.flags.rxPacket = 1;
-        }   
+        else{
+            pIndex ++;
+            if(pIndex == (pLength + 4)){
+                pIndex = 0;
+                pLength += 4;
+                state.flags.rxPacket = 1;
+            }
+        }      
     }
-    IFS0bits.U1RXIF = 0; // Clear the flag.
 }
 //-----------------------------------------------//
 //             PRIVATE FUNCTIONS                 //                     
@@ -104,31 +117,20 @@ static void refreshState(){
 static void initAll(){
     util_initPins();
     util_initADC();
-    //util_initTimer23();
-    //uart_init9600(1); // Channel 1
+    util_initTimer23();
+    uart_init9600(1); // Channel 1
     util_initInterrupts();
     oled_init();
-    rtc_init(); 
+    rtc_init(REFRESHITIME); 
     nvm_init();
     
 }
 
 void test(){
     initAll();
-    oled_clear();
-    uint8_t foo = 0;
-    while(1){
-        Sleep();
-        if(foo == 1){
-            oled_printChar('1');
-            foo = 0;
-        }
-        else{
-            oled_printChar('0');
-            foo = 1;
-        }
-    
-    }
+    oled_printChar('X');
+    util_startTimer23();
+    while(1);
 }
 //-----------------------------------------------//
 //                    MAIN                       //                     
@@ -142,7 +144,10 @@ int main(void){
                 uint16_t cycle = nvm_getCycle();
                 state.sunset = cycle & 0xFF;
                 state.sunrise = (cycle >> 8) & 0xFF;
-                //state.settings.raw = nvm_getSettings();
+                state.settings.raw = nvm_getSettings();
+                if(state.settings.fields.mqttSetting == 1){
+                    state.mqttState = ENABLED;
+                }
                 
                 refreshState();
                 ui_printBootMenu();
@@ -152,24 +157,45 @@ int main(void){
                 ui_refreshHeader(&state);
                 state.loopState = IDLE;
                 break;
-            case CONNECTING:
-                // 1. Try to connect to MQTT
-                // 2. Wait 
-                break;
             case IDLE:
-                if(state.flags.bChange){
+                if(state.mqttState == ENABLED){
+                    state.loopState = CONNECTING;
+                }
+                else if(state.flags.bChange){
                     state.loopState = BROWSE;
                 }
                 else if(state.flags.rxPacket == 1){
                     state.flags.rxPacket = 0;
                     state.loopState = HANDLE_MSG;
                 }
-                else if(state.flags.timeOut == 1){
-                    state.flags.timeOut = 0;
+                else if(state.flags.refresh == 1){
+                    state.flags.refresh = 0;
                     state.loopState = REFRESH;
                 }
                 else{
-                    Sleep(); // Woken on interrupts
+                    Idle(); // Woken on interrupts
+                }
+                break;
+            case CONNECTING:; // Some weird C99 grammar quirk
+                uint8_t connected = mqtt_connect(&state, 120, packet);
+                if(connected){
+                    state.mqttState = CONNECTED;
+                    state.loopState = SUBSCRIBE;
+                }
+                else{
+                    state.mqttState = DISCONNECTED;
+                    state.loopState = IDLE;
+                }
+                break;
+            case SUBSCRIBE:; // Some weird C99 grammar quirk
+                uint8_t subscribed = 0; 
+                subscribed  = mqtt_subscribe(&state, NEWSUNRISE, packet);
+                subscribed &= mqtt_subscribe(&state,  NEWSUNSET, packet);
+                if(subscribed){
+                    state.loopState = PUB_STATE;
+                }
+                else{
+                    state.loopState = SUBSCRIBE;
                 }
                 break;
             case REFRESH:
@@ -182,28 +208,101 @@ int main(void){
                     state.loopState = IDLE;
                 }
                 break;
-            case BROWSE:
-                if(ui_browse(&state)){
-                    state.flags.bChange = 0;
+            case BROWSE:; // C99 grammar quirk
+                uint8_t printMenu = 0;
+                switch(ui_browse(&state)){
+                    case NOUPDATES:
+                        state.loopState = IDLE;
+                        printMenu = 1;
+                        break;
+                    case UPDATETIME:
+                        rtc_setTime(state.time.hour, state.time.min);
+                        util_runLampFSM(&state);
+                        if(state.mqttState == CONNECTED){
+                            state.loopState = PUB_STATE;
+                        }
+                        else{
+                            state.loopState = IDLE;
+                        }
+                        printMenu = 1;
+                        break;
+                    case UPDATENODEID:
+                        nvm_saveSettings(state.settings.raw);
+                        if(state.mqttState == DISABLED){
+                            state.loopState = IDLE;
+                        }
+                        else{
+                            mqtt_disconnect();
+                            state.loopState = CONNECTING;
+                        }
+                        printMenu = 1;
+                        break;
+                    case UPDATECYCLE:
+                        nvm_saveCycle(state.sunrise, state.sunset);
+                        util_runLampFSM(&state);
+                        if(state.mqttState == CONNECTED){
+                            state.loopState = PUB_STATE;
+                        }
+                        else{
+                            state.loopState = IDLE;
+                        }
+                        printMenu = 1;
+                        break;
+                    case UPDATEMQTT:
+                        if(state.mqttState == DISABLED){
+                            mqtt_disconnect();
+                            state.loopState = REFRESH;
+                        }
+                        else{
+                            state.loopState = IDLE;
+                        }
+                        printMenu = 1;
+                        break;
+                    case UPDATEINDEX:
+                        state.loopState = IDLE;
+                    default:
+                        state.loopState = IDLE;
+                        break;    
+                }
+                state.flags.bChange = 0;
+                if(printMenu){
                     ui_printHeader();
                     ui_printMenu();
                     ui_refreshHeader(&state);
-                    
-                    state.loopState = REFRESH;
-                }
-                else{
-                    state.flags.bChange = 0;
-                    state.loopState = IDLE;
                 }
                 break;
             case PUB_VALS:
+                mqtt_pubTemp(state.boardTemp, state.settings.fields.nodeID, BOARDTEMP);
+                mqtt_pubTemp(state.plantTemp, state.settings.fields.nodeID, PLANTTEMP);
+                mqtt_pubWaterLevel(state.waterLevel, state.settings.fields.nodeID, WATER);
                 state.loopState = IDLE;
                 break;
             case PUB_STATE:
-                state.loopState = IDLE;
+                mqtt_pubCycle(state.sunrise, state.settings.fields.nodeID, SUNRISE);
+                mqtt_pubCycle(state.sunset, state.settings.fields.nodeID, SUNSET);
+                mqtt_pubLampState(state.lampState, state.settings.fields.nodeID, LAMPSTATE);
+                state.loopState = REFRESH;
                 break;
             case HANDLE_MSG:
-                state.loopState = IDLE;
+                state.flags.rxPacket = 0;
+
+                // Look for messages on NEWSUNRISE or NEWSUNSET topics:
+                if(packet[MTYPE_I] == PUBLISH){
+                    if(packet[PUB_TOP_I] == NEWSUNRISE){
+                        state.sunrise = packet[PUB_DATA_I];
+                        nvm_saveCycle(state.sunrise, state.sunset);
+                        util_runLampFSM(&state);
+                    }
+                    else if(packet[PUB_TOP_I] == NEWSUNSET){
+                        state.sunset = packet[PUB_DATA_I];
+                        nvm_saveCycle(state.sunrise, state.sunset);
+                        util_runLampFSM(&state);
+                    }
+                    state.loopState = PUB_STATE;
+                }
+                else{
+                    state.loopState = IDLE;
+                }
                 break;
             default:
                 break;

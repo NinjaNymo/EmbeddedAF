@@ -90,7 +90,7 @@
         <makeCustomizationEnableLongLines>false</makeCustomizationEnableLongLines>
         <makeCustomizationNormalizeHexFile>false</makeCustomizationNormalizeHexFile>
       </makeCustomizationType>
-      <item path="../../src/node/mqtt.c" ex="true" overriding="false">
+      <item path="../../src/node/mqtt.c" ex="false" overriding="false">
         <C30>
         </C30>
         <C30-AR>
