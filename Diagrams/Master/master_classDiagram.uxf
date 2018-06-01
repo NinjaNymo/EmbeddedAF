@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<diagram program="umlet" version="14.2">
+  <zoom_level>7</zoom_level>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>574</x>
+      <y>609</y>
+      <w>322</w>
+      <h>161</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;Class&gt;&gt;
+paho:mqtt:client:Client
+--
+on_connect    : function*
+on_message    : function*
+on_subscribe  : function*
+on_disconnect : function*
+--
+connect(host:string, port:integer, keepAlive:integer)
+subscribe(topic:string)
+publish(topic:string, data:integer)
+publish(topic:string, data:string)
+loop_start()
+loop_stop()
+disconnect()
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>133</x>
+      <y>322</y>
+      <w>294</w>
+      <h>119</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;Class&gt;&gt;
+XBeeHandler
+--
+inQ    : Queue
+outQ   : Queue
+device : ZigBeeDevice
+--
+__init__(inQ:Queue, outQ:Queue, XBeePort:string)
+run()
+receiveCB(xbee_message:XBeeMessage)
+terminate()</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>441</x>
+      <y>322</y>
+      <w>455</w>
+      <h>238</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;Class&gt;&gt;
+NodeClient
+--
+inQ     : Queue
+outQ    : Queue
+stop    : bool
+nodeID  : string 
+device  : ZigBeeDevice
+mClient : Client
+--
+__init__(device:ZigBeeDevice, outQ:Queue, nodeID:string)
+run()
+connect(keepAlive:integer)
+connectedCB(client:Client, userdata:null, flags:dict, rc:integer)
+subscribe(topic:string)
+subscribedCB(client:Client, userdata:null, mid:integer, granted_qos:integer)
+publish(msg:MSG)
+messageCB(client:Client, userdata:null, msg:mqtt_msg)
+disconnect()
+disconnectedCB(client:Client, userdata:null, rc:integer)
+put(msg:MSG)
+terminate()
+
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>385</x>
+      <y>56</y>
+      <w>175</w>
+      <h>119</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;Class&gt;&gt;
+Gateway
+--
+inQ        : Queue
+outQ       : Queue
+XBH        : XBeeHandler
+clientList : NodeClient[0..*]
+--
+__init__(uartPort:string)
+start()
+stop()</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>133</x>
+      <y>497</y>
+      <w>133</w>
+      <h>56</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;Class&gt;&gt;
+MSG
+--
+sender : ZigBeeDevice
+data   : bytearray</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>406</x>
+      <y>217</y>
+      <w>133</w>
+      <h>70</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;Class&gt;&gt;
+lib:threading:Thread
+--
+daemon : bool
+name   : string
+--
+start()</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>133</x>
+      <y>609</y>
+      <w>350</w>
+      <h>140</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;Class&gt;&gt;
+digi:xbee:devices:ZigBeeDevice
+--
+on_connect    : function*
+on_message    : function*
+on_subscribe  : function*
+on_disconnect : function*
+--
+__init__(port:string, baud_rate:integer)
+open()
+add_data_received_callback(function*)
+send_data(remote_xbee_device:ZigBeeDevice, data:bytearray)
+get_64bit_addr() : bytearray
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>294</x>
+      <y>252</y>
+      <w>126</w>
+      <h>84</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>160.0;10.0;10.0;10.0;10.0;100.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>532</x>
+      <y>252</y>
+      <w>91</w>
+      <h>84</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;110.0;10.0;110.0;100.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>252</x>
+      <y>105</y>
+      <w>147</w>
+      <h>231</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-
+m1=1
+</panel_attributes>
+    <additional_attributes>10.0;310.0;10.0;10.0;190.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>553</x>
+      <y>105</y>
+      <w>133</w>
+      <h>231</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-
+m1=0..*</panel_attributes>
+    <additional_attributes>150.0;310.0;150.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>721</x>
+      <y>553</y>
+      <w>21</w>
+      <h>70</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-
+m1=1</panel_attributes>
+    <additional_attributes>10.0;80.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>455</x>
+      <y>553</y>
+      <w>21</w>
+      <h>70</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-
+m1=1</panel_attributes>
+    <additional_attributes>10.0;80.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>301</x>
+      <y>434</y>
+      <w>21</w>
+      <h>189</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-
+m1=1</panel_attributes>
+    <additional_attributes>10.0;250.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>189</x>
+      <y>546</y>
+      <w>21</w>
+      <h>77</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-
+m1=1</panel_attributes>
+    <additional_attributes>10.0;90.0;10.0;10.0</additional_attributes>
+  </element>
+</diagram>
