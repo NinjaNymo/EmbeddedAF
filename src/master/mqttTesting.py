@@ -17,6 +17,7 @@ def message_cb(client, userdata, msg):
 client = mqtt.Client()
 client.on_connect = connected_cb # Sets connected call back function
 client.on_message = message_cb   # Sets publish message call back function
+client.con
 
 #   Connect client to broker:
 client.connect('192.168.0.104', 1883, 60)
