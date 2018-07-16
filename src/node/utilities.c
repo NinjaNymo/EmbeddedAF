@@ -91,23 +91,31 @@ void util_runLampFSM(systemState_t* state){
     }
     
     // Cus it makes it way more readable:
-    uint8_t SR = state->sunrise;
+    uint8_t sr = state->sunrise;
     uint8_t SS = state->sunset;
     uint8_t HH = state->time.hour;
+    
+    // if(((SS <= HH) && (HH < sr)) || ((sr < HH) && SS <= HH) ){
 
     switch(state->lampState){
         case ON:
             PORTBbits.RB13 = 1;
-            if(((SS <= HH) && (HH < SR)) || ((SR < HH) && SS <= HH) ){
+            if((SS <= HH) || (HH < sr)){
                 PORTBbits.RB13 = 0;
                 state->lampState = OFF;
             }    
             break;
         case OFF:
             PORTBbits.RB13 = 0;
-            if((SR <= HH) && (HH < SS)){
+            if((sr <= HH) && (HH < SS)){
                 PORTBbits.RB13 = 1;
                 state->lampState = ON;
+            }
+            else if(SS < sr){
+                if(((HH < SS) && (HH < sr)) || ((SS < HH) && (sr < HH))){
+                    PORTBbits.RB13 = 1;
+                    state->lampState = ON;
+                }
             }
             break;
         case SUS_ON:

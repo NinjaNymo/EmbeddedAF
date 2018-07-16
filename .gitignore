@@ -37,3 +37,7 @@
 **/GrowNode.X/nbproject/Makefile-*
 **/GrowNode.X/nbproject/Package-*
 src/master/\.vscode/settings\.json
+
+src/other/\.vscode/settings\.json
+
+src/other/\.vscode/tasks\.json

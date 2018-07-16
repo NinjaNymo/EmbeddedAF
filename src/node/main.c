@@ -68,7 +68,6 @@ void ISR _RTCCInterrupt(){
 //                 U1 RX ISR                     //                     
 //-----------------------------------------------//
 volatile uint8_t packet[30];
-volatile uint8_t newPacket = 0;
 volatile uint16_t pIndex = 0;
 volatile uint16_t pLength = 0;
 void ISR _U1RXInterrupt(){
