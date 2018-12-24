@@ -1,4 +1,14 @@
-# EmbeddedAF - WIP
+# EmbeddedAF
+
+
+
+![Master PCB](Docs/Photos/master_photo.png?raw=true "Master PCB") 
+
+![Node  PCB](Docs/Photos/node_photo.png?raw=true "Node PCB")
+
+![Node Structure](Docs/Diagrams/Node/node_hardware.png?raw=true "Node Structure")
+
+![Master Structure](Docs/Diagrams/Master/master_SystemStructure.png?raw=true "Master Structure")
 This repository contains stuff for a project on embedded automatic farming.
 
 That includes circuit schematics, PCB designs and code to run on the two systems:
