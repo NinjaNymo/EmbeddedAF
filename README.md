@@ -1,4 +1,26 @@
 # EmbeddedAF
+This repository contains the source code and hardware design files for a indoor automated urban farming system. 
+
+The system has a master/slave architecture, where the master is refered to as the _master_, while the slaves as the _nodes_.
+
+### **_The Concept:_**
+The idea was to use a wireless sensor network system as a case study in an embedded systems development process.
+
+Due to the master/slave architecture of the system, the project covers both embedded C development on the node devices and embedded Linux development on the master device, as well as communication over ZigBee between the two.
+
+All in all; a good variation of challanges to learn more about embedded systems.
+
+### **_The Node:_**
+![Node Structure](Docs/Diagrams/Node/node_hardware.png?raw=true "Node Structure")
+
+The node features a 16-bit MCU and a XBee 3 ZigBee module on an in-house developed and etched PCB. An OLED display and buttons are included on the board such that the node device can be used in an _offline mode_ independetly of the master device.
+
+The node device measures temperature on the PCB and interfaces with 1) external digital temperature sensors, 2) an external analog soil moisture sensor and 3) an external relay that controls a grow-light.
+
+The idea is to control the grow-light on a day/night-like cycle and record and publish the temperature and soil moisture measurements to the master device.
+
+* The firmware is written in C, and can be found in [/src/node/](/src/node).
+* The schematic and PCB is designed in Eagle, and can be found in [/Eagle/node/](/Eagle/node/).
 
 
 
@@ -6,7 +28,6 @@
 
 ![Node  PCB](Docs/Photos/node_photo.png?raw=true "Node PCB")
 
-![Node Structure](Docs/Diagrams/Node/node_hardware.png?raw=true "Node Structure")
 
 ![Master Structure](Docs/Diagrams/Master/master_SystemStructure.png?raw=true "Master Structure")
 This repository contains stuff for a project on embedded automatic farming.
